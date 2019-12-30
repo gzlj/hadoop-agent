@@ -7,7 +7,7 @@ type ComponentStatus struct {
 }
 
 type ClusteredComponentStatuses struct {
-	ClusterName string   `json:"clusterName"`
-	Host string   `json:"host"`
+	Cluster           string   `json:"cluster"`
+	Hostname          string   `json:"hostname"`
 	RunningComponents []string `json:"runningComponents"`
 }
