@@ -38,7 +38,8 @@ func init() {
 		cluster="mycluster"
 	}
 	hostname , _ := infra.GetHostName()
-	global.InitConfig(master, serverPort, hostname)
+	global.InitConfig(master, serverPort, hostname, cluster)
+	go infra.HeartBeat(master)
 }
 
 func (s *APIServer) registryApi() {
@@ -54,6 +55,7 @@ func main() {
 		engine: gin.Default(),
 		port: global.G_config.ServerPort,
 	}
+	go infra.HeartBeatLoop()
 	server.registryApi()
 	server.Run()
 }

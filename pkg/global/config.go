@@ -24,10 +24,11 @@ var (
 )
 
 
-func InitConfig(master string, serverPort, hostname string) (err error) {
+func InitConfig(master string, serverPort, hostname, cluster string) (err error) {
 
 
 	conf := Config{
+		Cluster: cluster,
 		Master: master,
 		ServerPort: serverPort,
 		HostName : hostname,

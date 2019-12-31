@@ -9,11 +9,10 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 
-//func GetComponentStatus() (statues []module.ComponentStatus, err error){
-//ClusteredComponentStatuses
 func GetComponentStatus() (status module.ClusteredComponentStatuses, err error){
 	var (
 		bytes []byte
@@ -47,7 +46,6 @@ func constructComponentStatuses(components []string) (status module.ClusteredCom
 }
 
 //send status to master period
-
 func HeartBeat(server string) (err error) {
 	var (
 		resp *http.Response
@@ -56,36 +54,30 @@ func HeartBeat(server string) (err error) {
 		body []byte
 		status module.ClusteredComponentStatuses
 	)
-
-
 	status, err = GetComponentStatus()
 	if err != nil {
-		log.Println("Failed to get hadoop component status on localhost: ", err)
 		return
 	}
 	body, err = json.Marshal(status)
 	if err != nil {
-		log.Println("Failed to get hadoop component status when json Marshal: ", err)
 		return
 	}
-
 	req = ConstructHttpPostReq(global.G_config.Master, global.HEART_BEART_URI, string(body))
 	resp, err = http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 	if(err != nil){
+		err = errors.New("Failed to send heartbeat to master: "+ err.Error())
 		return
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		log.Println("Failed to send heartbeat to master: ", resp.StatusCode)
-		err = errors.New(resp.Status)
+		err = errors.New("Failed to send heartbeat to master: " + resp.Status)
 		return
 	}
 	br = &module.BusinessResponse{}
 	body, _ = ioutil.ReadAll(resp.Body)
 	err =json.Unmarshal(body, br)
 	if br.Code != 200 {
-		log.Println("Failed to send heartbeat to master: ", br.Message)
-		err = errors.New(br.Message)
+		err = errors.New("Failed to send heartbeat to master: " + br.Message)
 		return
 	}
 	return
@@ -98,5 +90,22 @@ func ConstructHttpPostReq(server, uri,body string) (req *http.Request){
 	return
 }
 
+func HeartBeatLoop() {
+	var (
+		err error
+	)
+	timer1 := time.NewTimer(30 * time.Second)
+	for {
+		select {
+		case <-timer1.C:
+			err = HeartBeat(global.G_config.Master)
+			if err != nil {
+				log.Println("Error happened when send heartbeat to master: " ,err)
+			}
+			timer1.Reset(30 * time.Second)
+		}
+	}
+
+}
 
 
